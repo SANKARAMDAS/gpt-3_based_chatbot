@@ -1,4 +1,4 @@
-# chat_bot_chatgpt
+# chatBot just like chatGPT
 
 A chatBot based on GPT-3 engine(API).
 
