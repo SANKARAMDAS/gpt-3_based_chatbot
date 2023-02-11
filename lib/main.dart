@@ -1,7 +1,10 @@
-import 'package:chat_bot_chatgpt/chat_Screen.dart';
+// import 'package:chat_bot_chatgpt/chat_Screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+Future main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }
 

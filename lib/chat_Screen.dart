@@ -1,14 +1,13 @@
-import 'dart:async';
 
-import 'package:chat_bot_chatgpt/threedots.dart';
-import 'package:chat_gpt_sdk/chat_gpt_sdk.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:velocity_x/velocity_x.dart';
 
 import 'chatmessage.dart';
+import 'threedots.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({Key? key}) : super(key: key);
+  const ChatScreen({super.key});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -17,34 +16,34 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [];
-  ChatGPT? chatGPT;
+  // late OpanAI? chatGPT;
+  late OpenAI? chatGPT;
   bool _isImageSearch = false;
 
-  StreamSubscription? _subscription;
   bool _isTyping = false;
 
   @override
   void initState() {
+    chatGPT = OpanAI.instance.build(
+        token: dotenv.env["API_KEY"],
+        baseOption: HttpSetup(receiveTimeout: 60000));
     super.initState();
-    chatGPT = ChatGPT.instance.builder(
-      "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",
-    );
   }
 
   @override
   void dispose() {
-    chatGPT!.genImgClose();
-    _subscription?.cancel();
+    chatGPT?.close();
+    chatGPT?.genImgClose();
     super.dispose();
   }
 
   // Link for api - https://beta.openai.com/account/api-keys
 
-  void _sendMessage() {
+  void _sendMessage() async {
     if (_controller.text.isEmpty) return;
     ChatMessage message = ChatMessage(
-      sender: "user",
       text: _controller.text,
+      sender: "user",
       isImage: false,
     );
 
@@ -58,28 +57,16 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_isImageSearch) {
       final request = GenerateImage(message.text, 1, size: "256x256");
 
-      _subscription = chatGPT!
-          .generateImageStream(request)
-          .distinct()
-          .first
-          .asStream()
-          .listen((response) {
-        Vx.log(response.data!.last!.url!);
-        insertNewData(response.data!.last!.url!, isImage: true);
-      });
+      final response = await chatGPT!.generateImage(request);
+      Vx.log(response!.data!.last!.url!);
+      insertNewData(response.data!.last!.url!, isImage: true);
     } else {
-      final request = CompleteReq(
-          prompt: message.text, model: kTranslateModelV3, max_tokens: 200);
+      final request =
+          CompleteText(prompt: message.text, model: kTranslateModelV3);
 
-      _subscription = chatGPT!
-          .onCompleteStream(request: request)
-          .distinct()
-          .first
-          .asStream()
-          .listen((response) {
-        Vx.log(response!.choices.first.text);
-        insertNewData(response.choices.first.text, isImage: false);
-      });
+      final response = await chatGPT!.onCompleteText(request: request);
+      Vx.log(response!.choices[0].text);
+      insertNewData(response.choices[0].text, isImage: false);
     }
   }
 
@@ -89,6 +76,7 @@ class _ChatScreenState extends State<ChatScreen> {
       sender: "bot",
       isImage: isImage,
     );
+
     setState(() {
       _isTyping = false;
       _messages.insert(0, botMessage);
@@ -130,33 +118,31 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('chatGPT Demo'),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Flexible(
-              child: ListView.builder(
+        appBar: AppBar(title: const Text("ChatGPT & Dall-E2 Demo")),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Flexible(
+                  child: ListView.builder(
                 reverse: true,
                 padding: Vx.m8,
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
                   return _messages[index];
                 },
+              )),
+              if (_isTyping) const ThreeDots(),
+              const Divider(
+                height: 1.0,
               ),
-            ),
-            if (_isTyping) const ThreeDots(),
-            const Divider(
-              height: 1.0,
-            ),
-            Container(
-              decoration: BoxDecoration(color: context.cardColor),
-              child: _buildTextComposer(),
-            ),
-          ],
-        ),
-      ),
-    );
+              Container(
+                decoration: BoxDecoration(
+                  color: context.cardColor,
+                ),
+                child: _buildTextComposer(),
+              )
+            ],
+          ),
+        ));
   }
 }
