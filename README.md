@@ -1,16 +1,7 @@
-# chat_bot_chatgpt
+# chatBot just like chatGPT
 
-A new Flutter project.
+A chatBot based on GPT-3 engine(API).
 
-## Getting Started
+clone this project> use your own api key from (https://platform.openai.com/account/api-keys) > run flutter pub get. 
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+And Enjoy...
